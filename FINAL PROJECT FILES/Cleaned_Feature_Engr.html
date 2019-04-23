@@ -2,7 +2,7 @@
 <html>
 <head><meta charset="utf-8" />
 
-<title>Predicting total number of trips</title>
+<title>Cleaned_Feature_Engr</title>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
@@ -13116,8 +13116,15 @@ div#notebook {
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h1 id="Predicting-total-trips-per-day">Predicting total trips per day<a class="anchor-link" href="#Predicting-total-trips-per-day">&#182;</a></h1><p>In this notebook, we aim to use our weather data to help predict the number of rides that will happen on a given day. As we will see, we are mostly successful.</p>
-<h2 id="Setup">Setup<a class="anchor-link" href="#Setup">&#182;</a></h2><p>We import relevant packages, perform setup work, and log in to Darwin.</p>
+<h1 id="Feature-engineering">Feature engineering<a class="anchor-link" href="#Feature-engineering">&#182;</a></h1><p>We prepare the data for the data analysis we will be conducting.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Importing">Importing<a class="anchor-link" href="#Importing">&#182;</a></h2><p>We first import the packages and the data sets. Note that these data sets come from the result of our data exploration .ipynb file</p>
 
 </div>
 </div>
@@ -13127,18 +13134,18 @@ div#notebook {
 <div class="prompt input_prompt">In&nbsp;[1]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="kn">from</span> <span class="nn">IPython.display</span> <span class="k">import</span> <span class="n">Image</span>
-<span class="kn">from</span> <span class="nn">time</span> <span class="k">import</span> <span class="n">sleep</span>
-<span class="kn">from</span> <span class="nn">sklearn.metrics</span> <span class="k">import</span> <span class="n">r2_score</span>
-<span class="kn">from</span> <span class="nn">datetime</span> <span class="k">import</span> <span class="n">datetime</span>
-
+<div class=" highlight hl-ipython3"><pre><span></span><span class="kn">import</span> <span class="nn">sklearn</span> <span class="k">as</span> <span class="nn">sk</span>
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">os</span> <span class="k">import</span> <span class="n">getenv</span>
+<span class="kn">from</span> <span class="nn">datetime</span> <span class="k">import</span> <span class="n">datetime</span>
+<span class="kn">from</span> <span class="nn">amb_sdk.sdk</span> <span class="k">import</span> <span class="n">DarwinSdk</span>
 <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+
 <span class="o">%</span><span class="k">matplotlib</span> inline
 
-<span class="n">DATASET_NAME</span> <span class="o">=</span> <span class="s1">&#39;final_cycle_weather_by_day.csv&#39;</span>
-
-<span class="n">ts</span> <span class="o">=</span> <span class="s1">&#39;{:%Y%m</span><span class="si">%d</span><span class="s1">%H%M%S}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">())</span>
+<span class="n">pd</span><span class="o">.</span><span class="n">set_option</span><span class="p">(</span><span class="s1">&#39;display.max_rows&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+<span class="n">pd</span><span class="o">.</span><span class="n">set_option</span><span class="p">(</span><span class="s1">&#39;display.max_columns&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
 </pre></div>
 
     </div>
@@ -13148,18 +13155,605 @@ div#notebook {
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[2]:</div>
+<div class="prompt input_prompt">In&nbsp;[3]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="kn">from</span> <span class="nn">amb_sdk.sdk</span> <span class="k">import</span> <span class="n">DarwinSdk</span>
-<span class="n">ds</span> <span class="o">=</span> <span class="n">DarwinSdk</span><span class="p">()</span>
-<span class="n">ds</span><span class="o">.</span><span class="n">set_url</span><span class="p">(</span><span class="s1">&#39;https://amb-demo-api.sparkcognition.com/v1/&#39;</span><span class="p">)</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">cycle_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;./data/cleaned_final_b_cycle_data.csv&#39;</span><span class="p">)</span>
+<span class="n">weather_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;./data/cleaned_austin_weather.csv&#39;</span><span class="p">)</span>
+</pre></div>
 
-<span class="n">status</span><span class="p">,</span> <span class="n">msg</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">auth_login_user</span><span class="p">(</span><span class="s1">&#39;danny.diaz@utexas.edu&#39;</span><span class="p">,</span> <span class="s1">&#39;JcXCnQ7Wx2&#39;</span><span class="p">)</span>
-<span class="k">if</span> <span class="ow">not</span> <span class="n">status</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
-<span class="k">else</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;You are logged in: &#39;</span><span class="p">,</span><span class="n">status</span><span class="p">)</span>
+    </div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[4]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">cycle_df</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+    <div class="prompt output_prompt">Out[4]:</div>
+
+
+
+<div class="output_html rendered_html output_subarea output_execute_result">
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>Trip ID</th>
+      <th>Membership Type</th>
+      <th>Bicycle ID</th>
+      <th>Checkout Date</th>
+      <th>Checkout Time</th>
+      <th>Checkout Kiosk</th>
+      <th>Return Kiosk</th>
+      <th>Trip Duration Minutes</th>
+      <th>Month</th>
+      <th>Year</th>
+      <th>Checkout WeekDay</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>9900285854</td>
+      <td>Annual (San Antonio B-cycle)</td>
+      <td>207.0</td>
+      <td>2014-10-26</td>
+      <td>0 days 13:12:00.000000000</td>
+      <td>West &amp; 6th St.</td>
+      <td>Rainey St @ Cummings</td>
+      <td>76</td>
+      <td>10</td>
+      <td>2014</td>
+      <td>Sunday</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>9900285855</td>
+      <td>24-Hour Kiosk (Austin B-cycle)</td>
+      <td>969.0</td>
+      <td>2014-10-26</td>
+      <td>0 days 13:12:00.000000000</td>
+      <td>Convention Center / 4th St. @ MetroRail</td>
+      <td>Pfluger Bridge @ W 2nd Street</td>
+      <td>58</td>
+      <td>10</td>
+      <td>2014</td>
+      <td>Sunday</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>9900285856</td>
+      <td>Annual Membership (Austin B-cycle)</td>
+      <td>214.0</td>
+      <td>2014-10-26</td>
+      <td>0 days 13:12:00.000000000</td>
+      <td>West &amp; 6th St.</td>
+      <td>8th &amp; Congress</td>
+      <td>8</td>
+      <td>10</td>
+      <td>2014</td>
+      <td>Sunday</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>9900285857</td>
+      <td>24-Hour Kiosk (Austin B-cycle)</td>
+      <td>745.0</td>
+      <td>2014-10-26</td>
+      <td>0 days 13:12:00.000000000</td>
+      <td>Zilker Park at Barton Springs &amp; William Barton...</td>
+      <td>Zilker Park at Barton Springs &amp; William Barton...</td>
+      <td>28</td>
+      <td>10</td>
+      <td>2014</td>
+      <td>Sunday</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>9900285858</td>
+      <td>24-Hour Kiosk (Austin B-cycle)</td>
+      <td>164.0</td>
+      <td>2014-10-26</td>
+      <td>0 days 13:12:00.000000000</td>
+      <td>Bullock Museum @ Congress &amp; MLK</td>
+      <td>Convention Center/ 3rd &amp; Trinity</td>
+      <td>15</td>
+      <td>10</td>
+      <td>2014</td>
+      <td>Sunday</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[5]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">cycle_df</span><span class="o">.</span><span class="n">describe</span><span class="p">()</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+    <div class="prompt output_prompt">Out[5]:</div>
+
+
+
+<div class="output_html rendered_html output_subarea output_execute_result">
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>Trip ID</th>
+      <th>Bicycle ID</th>
+      <th>Trip Duration Minutes</th>
+      <th>Month</th>
+      <th>Year</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>count</th>
+      <td>6.194640e+05</td>
+      <td>618807.000000</td>
+      <td>619464.000000</td>
+      <td>619464.000000</td>
+      <td>619464.000000</td>
+    </tr>
+    <tr>
+      <th>mean</th>
+      <td>5.366527e+09</td>
+      <td>471.195502</td>
+      <td>29.893908</td>
+      <td>5.903055</td>
+      <td>2015.420898</td>
+    </tr>
+    <tr>
+      <th>std</th>
+      <td>4.926918e+09</td>
+      <td>323.385229</td>
+      <td>70.892816</td>
+      <td>3.131094</td>
+      <td>1.057068</td>
+    </tr>
+    <tr>
+      <th>min</th>
+      <td>8.269930e+06</td>
+      <td>3.000000</td>
+      <td>3.000000</td>
+      <td>1.000000</td>
+      <td>2013.000000</td>
+    </tr>
+    <tr>
+      <th>25%</th>
+      <td>1.271565e+07</td>
+      <td>208.000000</td>
+      <td>9.000000</td>
+      <td>3.000000</td>
+      <td>2015.000000</td>
+    </tr>
+    <tr>
+      <th>50%</th>
+      <td>9.900027e+09</td>
+      <td>417.000000</td>
+      <td>15.000000</td>
+      <td>6.000000</td>
+      <td>2015.000000</td>
+    </tr>
+    <tr>
+      <th>75%</th>
+      <td>9.900189e+09</td>
+      <td>735.000000</td>
+      <td>29.000000</td>
+      <td>9.000000</td>
+      <td>2016.000000</td>
+    </tr>
+    <tr>
+      <th>max</th>
+      <td>9.900353e+09</td>
+      <td>5089.000000</td>
+      <td>10981.000000</td>
+      <td>12.000000</td>
+      <td>2017.000000</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[6]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">weather_df</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+    <div class="prompt output_prompt">Out[6]:</div>
+
+
+
+<div class="output_html rendered_html output_subarea output_execute_result">
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>Date</th>
+      <th>TempHighF</th>
+      <th>TempAvgF</th>
+      <th>TempLowF</th>
+      <th>DewPointHighF</th>
+      <th>DewPointAvgF</th>
+      <th>DewPointLowF</th>
+      <th>HumidityHighPercent</th>
+      <th>HumidityAvgPercent</th>
+      <th>HumidityLowPercent</th>
+      <th>SeaLevelPressureHighInches</th>
+      <th>SeaLevelPressureAvgInches</th>
+      <th>SeaLevelPressureLowInches</th>
+      <th>VisibilityHighMiles</th>
+      <th>VisibilityAvgMiles</th>
+      <th>VisibilityLowMiles</th>
+      <th>WindHighMPH</th>
+      <th>WindAvgMPH</th>
+      <th>WindGustMPH</th>
+      <th>PrecipitationSumInches</th>
+      <th>Events</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>2013-12-21</td>
+      <td>74</td>
+      <td>60</td>
+      <td>45</td>
+      <td>67</td>
+      <td>49</td>
+      <td>43</td>
+      <td>93</td>
+      <td>75</td>
+      <td>57</td>
+      <td>29.86</td>
+      <td>29.68</td>
+      <td>29.59</td>
+      <td>10</td>
+      <td>7</td>
+      <td>2</td>
+      <td>20</td>
+      <td>4</td>
+      <td>31</td>
+      <td>0.46</td>
+      <td>Rain , Thunderstorm</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>2013-12-22</td>
+      <td>56</td>
+      <td>48</td>
+      <td>39</td>
+      <td>43</td>
+      <td>36</td>
+      <td>28</td>
+      <td>93</td>
+      <td>68</td>
+      <td>43</td>
+      <td>30.41</td>
+      <td>30.13</td>
+      <td>29.87</td>
+      <td>10</td>
+      <td>10</td>
+      <td>5</td>
+      <td>16</td>
+      <td>6</td>
+      <td>25</td>
+      <td>0</td>
+      <td></td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>2013-12-23</td>
+      <td>58</td>
+      <td>45</td>
+      <td>32</td>
+      <td>31</td>
+      <td>27</td>
+      <td>23</td>
+      <td>76</td>
+      <td>52</td>
+      <td>27</td>
+      <td>30.56</td>
+      <td>30.49</td>
+      <td>30.41</td>
+      <td>10</td>
+      <td>10</td>
+      <td>10</td>
+      <td>8</td>
+      <td>3</td>
+      <td>12</td>
+      <td>0</td>
+      <td></td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>2013-12-24</td>
+      <td>61</td>
+      <td>46</td>
+      <td>31</td>
+      <td>36</td>
+      <td>28</td>
+      <td>21</td>
+      <td>89</td>
+      <td>56</td>
+      <td>22</td>
+      <td>30.56</td>
+      <td>30.45</td>
+      <td>30.3</td>
+      <td>10</td>
+      <td>10</td>
+      <td>7</td>
+      <td>12</td>
+      <td>4</td>
+      <td>20</td>
+      <td>0</td>
+      <td></td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>2013-12-25</td>
+      <td>58</td>
+      <td>50</td>
+      <td>41</td>
+      <td>44</td>
+      <td>40</td>
+      <td>36</td>
+      <td>86</td>
+      <td>71</td>
+      <td>56</td>
+      <td>30.41</td>
+      <td>30.33</td>
+      <td>30.27</td>
+      <td>10</td>
+      <td>10</td>
+      <td>7</td>
+      <td>10</td>
+      <td>2</td>
+      <td>16</td>
+      <td>T</td>
+      <td></td>
+    </tr>
+  </tbody>
+</table>
+</div>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[7]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">weather_df</span><span class="o">.</span><span class="n">describe</span><span class="p">()</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+    <div class="prompt output_prompt">Out[7]:</div>
+
+
+
+<div class="output_html rendered_html output_subarea output_execute_result">
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>TempHighF</th>
+      <th>TempAvgF</th>
+      <th>TempLowF</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>count</th>
+      <td>1319.000000</td>
+      <td>1319.000000</td>
+      <td>1319.000000</td>
+    </tr>
+    <tr>
+      <th>mean</th>
+      <td>80.862775</td>
+      <td>70.642911</td>
+      <td>59.902957</td>
+    </tr>
+    <tr>
+      <th>std</th>
+      <td>14.766523</td>
+      <td>14.045904</td>
+      <td>14.190648</td>
+    </tr>
+    <tr>
+      <th>min</th>
+      <td>32.000000</td>
+      <td>29.000000</td>
+      <td>19.000000</td>
+    </tr>
+    <tr>
+      <th>25%</th>
+      <td>72.000000</td>
+      <td>62.000000</td>
+      <td>49.000000</td>
+    </tr>
+    <tr>
+      <th>50%</th>
+      <td>83.000000</td>
+      <td>73.000000</td>
+      <td>63.000000</td>
+    </tr>
+    <tr>
+      <th>75%</th>
+      <td>92.000000</td>
+      <td>83.000000</td>
+      <td>73.000000</td>
+    </tr>
+    <tr>
+      <th>max</th>
+      <td>107.000000</td>
+      <td>93.000000</td>
+      <td>81.000000</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Type-conversion">Type conversion<a class="anchor-link" href="#Type-conversion">&#182;</a></h2><p>We convert the dates into datetime objects.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[8]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">Before:&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">cycle_df</span><span class="p">[[</span><span class="s1">&#39;Checkout Date&#39;</span><span class="p">,</span> <span class="s1">&#39;Checkout Time&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">dtypes</span><span class="p">)</span>
+
+<span class="n">cycle_df</span><span class="p">[</span><span class="s1">&#39;Checkout Date&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span>
+    <span class="n">cycle_df</span><span class="p">[</span><span class="s1">&#39;Checkout Date&#39;</span><span class="p">],</span> <span class="n">infer_datetime_format</span><span class="o">=</span><span class="kc">True</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">dt</span><span class="o">.</span><span class="n">normalize</span><span class="p">()</span> 
+
+<span class="n">cycle_df</span><span class="p">[</span><span class="s1">&#39;Checkout Time&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_timedelta</span><span class="p">(</span>
+    <span class="n">cycle_df</span><span class="p">[</span><span class="s1">&#39;Checkout Time&#39;</span><span class="p">])</span> 
+
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">After:&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">cycle_df</span><span class="p">[[</span><span class="s1">&#39;Checkout Date&#39;</span><span class="p">,</span> <span class="s1">&#39;Checkout Time&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">dtypes</span><span class="p">)</span>
 </pre></div>
 
     </div>
@@ -13176,7 +13770,16 @@ div#notebook {
 
 
 <div class="output_subarea output_stream output_stdout output_text">
-<pre>You are logged in:  True
+<pre>
+Before:
+Checkout Date    object
+Checkout Time    object
+dtype: object
+
+After:
+Checkout Date     datetime64[ns]
+Checkout Time    timedelta64[ns]
+dtype: object
 </pre>
 </div>
 </div>
@@ -13185,21 +13788,20 @@ div#notebook {
 </div>
 
 </div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<h2 id="Data-Preparation">Data Preparation<a class="anchor-link" href="#Data-Preparation">&#182;</a></h2><p>Reading the BCycle / weather dataset, and uploading it to Darwin. When uploading the dataset, we will see that the dataset already exists. This means that this code has been run before, and so the dataset is already uploaded.</p>
-
-</div>
-</div>
-</div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[3]:</div>
+<div class="prompt input_prompt">In&nbsp;[9]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;./data/&#39;</span><span class="o">+</span><span class="n">DATASET_NAME</span><span class="p">)</span>
-<span class="n">df</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">Before:&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">weather_df</span><span class="p">[</span><span class="s1">&#39;Date&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">dtypes</span><span class="p">)</span>
+
+<span class="n">weather_df</span><span class="p">[</span><span class="s1">&#39;Date&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span>
+    <span class="n">weather_df</span><span class="p">[</span><span class="s1">&#39;Date&#39;</span><span class="p">],</span> <span class="n">infer_datetime_format</span><span class="o">=</span><span class="kc">True</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">dt</span><span class="o">.</span><span class="n">normalize</span><span class="p">()</span> 
+
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">After:&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">weather_df</span><span class="p">[</span><span class="s1">&#39;Date&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">dtypes</span><span class="p">)</span>
 </pre></div>
 
     </div>
@@ -13212,7 +13814,642 @@ div#notebook {
 
 <div class="output_area">
 
-    <div class="prompt output_prompt">Out[3]:</div>
+    <div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>
+Before:
+object
+
+After:
+datetime64[ns]
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Creating-a-dataframe-of-total-rides-for-each-day.">Creating a dataframe of total rides for each day.<a class="anchor-link" href="#Creating-a-dataframe-of-total-rides-for-each-day.">&#182;</a></h2><p>This involves grouping by checkout date.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[11]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">rides_each_day</span> <span class="o">=</span> <span class="n">cycle_df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s1">&#39;Checkout Date&#39;</span><span class="p">)</span>
+
+<span class="n">day_stats</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+<span class="p">[</span>
+    <span class="p">(</span><span class="n">date</span><span class="o">.</span><span class="n">date</span><span class="p">(),</span>
+     <span class="n">date</span><span class="o">.</span><span class="n">date</span><span class="p">()</span><span class="o">.</span><span class="n">month</span><span class="p">,</span> 
+     <span class="n">date</span><span class="o">.</span><span class="n">date</span><span class="p">()</span><span class="o">.</span><span class="n">year</span><span class="p">,</span> 
+     <span class="n">date</span><span class="o">.</span><span class="n">weekday</span><span class="p">(),</span>
+     <span class="nb">round</span><span class="p">(</span><span class="n">group</span><span class="p">[</span><span class="s1">&#39;Trip Duration Minutes&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">(),</span><span class="mi">3</span><span class="p">),</span>
+     <span class="nb">len</span><span class="p">(</span><span class="n">group</span><span class="p">),</span>
+    <span class="p">)</span>
+    <span class="k">for</span> <span class="n">date</span><span class="p">,</span><span class="n">group</span> <span class="ow">in</span> <span class="n">rides_each_day</span>
+<span class="p">],</span> 
+    <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;Date&#39;</span><span class="p">,</span><span class="s1">&#39;Month&#39;</span><span class="p">,</span><span class="s1">&#39;Year&#39;</span><span class="p">,</span><span class="s1">&#39;Weekday&#39;</span><span class="p">,</span> 
+             <span class="s1">&#39;Avg Trip Duration&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;Total Rides&#39;</span><span class="p">])</span>
+
+<span class="n">day_stats</span><span class="p">[</span><span class="s1">&#39;Date&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span>
+    <span class="n">day_stats</span><span class="p">[</span><span class="s1">&#39;Date&#39;</span><span class="p">],</span> <span class="n">infer_datetime_format</span><span class="o">=</span><span class="kc">True</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">dt</span><span class="o">.</span><span class="n">normalize</span><span class="p">()</span>
+
+<span class="n">day_stats</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="s1">&#39;Total Rides&#39;</span><span class="p">,</span> <span class="n">ascending</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+    <div class="prompt output_prompt">Out[11]:</div>
+
+
+
+<div class="output_html rendered_html output_subarea output_execute_result">
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>Date</th>
+      <th>Month</th>
+      <th>Year</th>
+      <th>Weekday</th>
+      <th>Avg Trip Duration</th>
+      <th>Total Rides</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>452</th>
+      <td>2015-03-19</td>
+      <td>3</td>
+      <td>2015</td>
+      <td>3</td>
+      <td>21.077</td>
+      <td>2927</td>
+    </tr>
+    <tr>
+      <th>447</th>
+      <td>2015-03-14</td>
+      <td>3</td>
+      <td>2015</td>
+      <td>5</td>
+      <td>26.473</td>
+      <td>2645</td>
+    </tr>
+    <tr>
+      <th>83</th>
+      <td>2014-03-14</td>
+      <td>3</td>
+      <td>2014</td>
+      <td>4</td>
+      <td>37.012</td>
+      <td>2642</td>
+    </tr>
+    <tr>
+      <th>448</th>
+      <td>2015-03-15</td>
+      <td>3</td>
+      <td>2015</td>
+      <td>6</td>
+      <td>22.700</td>
+      <td>2539</td>
+    </tr>
+    <tr>
+      <th>84</th>
+      <td>2014-03-15</td>
+      <td>3</td>
+      <td>2014</td>
+      <td>5</td>
+      <td>40.202</td>
+      <td>2463</td>
+    </tr>
+    <tr>
+      <th>451</th>
+      <td>2015-03-18</td>
+      <td>3</td>
+      <td>2015</td>
+      <td>2</td>
+      <td>23.004</td>
+      <td>2376</td>
+    </tr>
+    <tr>
+      <th>449</th>
+      <td>2015-03-16</td>
+      <td>3</td>
+      <td>2015</td>
+      <td>0</td>
+      <td>19.625</td>
+      <td>2266</td>
+    </tr>
+    <tr>
+      <th>450</th>
+      <td>2015-03-17</td>
+      <td>3</td>
+      <td>2015</td>
+      <td>1</td>
+      <td>21.252</td>
+      <td>2134</td>
+    </tr>
+    <tr>
+      <th>816</th>
+      <td>2016-03-17</td>
+      <td>3</td>
+      <td>2016</td>
+      <td>3</td>
+      <td>24.781</td>
+      <td>2129</td>
+    </tr>
+    <tr>
+      <th>1121</th>
+      <td>2017-03-18</td>
+      <td>3</td>
+      <td>2017</td>
+      <td>5</td>
+      <td>34.351</td>
+      <td>2127</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Merging-Cycle-Data-with-Weather-Data">Merging Cycle Data with Weather Data<a class="anchor-link" href="#Merging-Cycle-Data-with-Weather-Data">&#182;</a></h2><p>This is an inner join on the date column.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[12]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">filt_weather_df</span> <span class="o">=</span> <span class="n">weather_df</span><span class="p">[[</span><span class="s1">&#39;Date&#39;</span><span class="p">,</span><span class="s1">&#39;TempHighF&#39;</span><span class="p">,</span><span class="s1">&#39;TempAvgF&#39;</span><span class="p">,</span><span class="s1">&#39;DewPointHighF&#39;</span><span class="p">,</span> <span class="s1">&#39;DewPointAvgF&#39;</span><span class="p">,</span>
+                              <span class="s1">&#39;WindHighMPH&#39;</span><span class="p">,</span><span class="s1">&#39;WindAvgMPH&#39;</span><span class="p">,</span><span class="s1">&#39;PrecipitationSumInches&#39;</span><span class="p">,</span><span class="s1">&#39;Events&#39;</span><span class="p">]]</span>
+
+<span class="n">merge_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">day_stats</span><span class="p">,</span> <span class="n">filt_weather_df</span><span class="p">,</span> <span class="n">on</span><span class="o">=</span><span class="s1">&#39;Date&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">merge_df</span><span class="o">.</span><span class="n">dtypes</span><span class="p">)</span>
+<span class="n">merge_df</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+    <div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>Date                      datetime64[ns]
+Month                              int64
+Year                               int64
+Weekday                            int64
+Avg Trip Duration                float64
+Total Rides                        int64
+TempHighF                          int64
+TempAvgF                           int64
+DewPointHighF                     object
+DewPointAvgF                      object
+WindHighMPH                       object
+WindAvgMPH                        object
+PrecipitationSumInches            object
+Events                            object
+dtype: object
+</pre>
+</div>
+</div>
+
+<div class="output_area">
+
+    <div class="prompt output_prompt">Out[12]:</div>
+
+
+
+<div class="output_html rendered_html output_subarea output_execute_result">
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>Date</th>
+      <th>Month</th>
+      <th>Year</th>
+      <th>Weekday</th>
+      <th>Avg Trip Duration</th>
+      <th>Total Rides</th>
+      <th>TempHighF</th>
+      <th>TempAvgF</th>
+      <th>DewPointHighF</th>
+      <th>DewPointAvgF</th>
+      <th>WindHighMPH</th>
+      <th>WindAvgMPH</th>
+      <th>PrecipitationSumInches</th>
+      <th>Events</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>2013-12-21</td>
+      <td>12</td>
+      <td>2013</td>
+      <td>5</td>
+      <td>30.887</td>
+      <td>97</td>
+      <td>74</td>
+      <td>60</td>
+      <td>67</td>
+      <td>49</td>
+      <td>20</td>
+      <td>4</td>
+      <td>0.46</td>
+      <td>Rain , Thunderstorm</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>2013-12-22</td>
+      <td>12</td>
+      <td>2013</td>
+      <td>6</td>
+      <td>43.385</td>
+      <td>109</td>
+      <td>56</td>
+      <td>48</td>
+      <td>43</td>
+      <td>36</td>
+      <td>16</td>
+      <td>6</td>
+      <td>0</td>
+      <td></td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>2013-12-23</td>
+      <td>12</td>
+      <td>2013</td>
+      <td>0</td>
+      <td>57.376</td>
+      <td>93</td>
+      <td>58</td>
+      <td>45</td>
+      <td>31</td>
+      <td>27</td>
+      <td>8</td>
+      <td>3</td>
+      <td>0</td>
+      <td></td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>2013-12-24</td>
+      <td>12</td>
+      <td>2013</td>
+      <td>1</td>
+      <td>33.519</td>
+      <td>81</td>
+      <td>61</td>
+      <td>46</td>
+      <td>36</td>
+      <td>28</td>
+      <td>12</td>
+      <td>4</td>
+      <td>0</td>
+      <td></td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>2013-12-25</td>
+      <td>12</td>
+      <td>2013</td>
+      <td>2</td>
+      <td>50.695</td>
+      <td>141</td>
+      <td>58</td>
+      <td>50</td>
+      <td>44</td>
+      <td>40</td>
+      <td>10</td>
+      <td>2</td>
+      <td>T</td>
+      <td></td>
+    </tr>
+  </tbody>
+</table>
+</div>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Imputation">Imputation<a class="anchor-link" href="#Imputation">&#182;</a></h2><p>The weather data has some missing values (namely in some dewpoint and wind speed columns) which we replace with the appropriate average.</p>
+<p>The precipitation column also has an entry "T" for <i> trace precipitation </i>. We replace this with $0.005$ inches, as discussed in the report.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[13]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">merge_df</span><span class="o">.</span><span class="n">Events</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">,</span> <span class="s1">&#39;Sunny&#39;</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+
+<span class="c1">#I am making the T (trace) equal to 0.005 inches.</span>
+<span class="n">merge_df</span><span class="p">[</span><span class="s1">&#39;PrecipitationSumInches&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;T&#39;</span><span class="p">,</span><span class="mf">0.005</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="c1"># else I can remove them</span>
+<span class="c1"># merge_df = merge_df[~merge_df[&#39;PrecipitationSumInches&#39;].isin([&#39;T&#39;])]</span>
+
+
+<span class="c1"># merge_df[~merge_df[&#39;DewPointHighF&#39;].isin([&#39;-&#39;])].DewPointAvgF.astype(&#39;int&#39;).mean()</span>
+<span class="c1"># This line above ^ returned a mean of 61.62</span>
+<span class="c1"># merge_df[~merge_df[&#39;DewPointAvgF&#39;].isin([&#39;-&#39;])].DewPointAvgF.astype(&#39;int&#39;).mean()</span>
+<span class="c1"># This line above ^ returned a mean of 56.92</span>
+<span class="c1"># merge_df[~merge_df[&#39;WindHighMPH&#39;].isin([&#39;-&#39;])].WindHighMPH.astype(&#39;int&#39;).mean()</span>
+<span class="c1"># This line above ^ returned a mean of 13.22</span>
+<span class="c1"># merge_df[~merge_df[&#39;WindAvgMPH&#39;].isin([&#39;-&#39;])].WindAvgMPH.astype(&#39;int&#39;).mean()</span>
+<span class="c1"># This line above ^ returned a mean of 5.01</span>
+
+
+
+<span class="n">merge_df</span><span class="p">[</span><span class="s1">&#39;DewPointHighF&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="mi">62</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">merge_df</span><span class="p">[</span><span class="s1">&#39;DewPointAvgF&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span> <span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="mi">57</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">merge_df</span><span class="p">[</span><span class="s1">&#39;WindHighMPH&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span> <span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="mi">13</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">merge_df</span><span class="p">[</span><span class="s1">&#39;WindAvgMPH&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+
+<span class="n">cols</span> <span class="o">=</span> <span class="n">merge_df</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="n">merge_df</span><span class="o">.</span><span class="n">dtypes</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="s1">&#39;object&#39;</span><span class="p">)][:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+<span class="n">merge_df</span><span class="p">[</span><span class="n">cols</span><span class="p">]</span> <span class="o">=</span> <span class="n">merge_df</span><span class="p">[</span><span class="n">cols</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">to_numeric</span><span class="p">)</span>
+<span class="n">merge_df</span><span class="o">.</span><span class="n">dtypes</span>
+<span class="c1">#merge_df.head()</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+    <div class="prompt output_prompt">Out[13]:</div>
+
+
+
+
+<div class="output_text output_subarea output_execute_result">
+<pre>Date                      datetime64[ns]
+Month                              int64
+Year                               int64
+Weekday                            int64
+Avg Trip Duration                float64
+Total Rides                        int64
+TempHighF                          int64
+TempAvgF                           int64
+DewPointHighF                      int64
+DewPointAvgF                       int64
+WindHighMPH                        int64
+WindAvgMPH                         int64
+PrecipitationSumInches           float64
+Events                            object
+dtype: object</pre>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>We place the precipitation in bins.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[14]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">precip_bins</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mf">0.001</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span><span class="mi">10</span><span class="p">]</span>
+<span class="n">merge_df</span><span class="p">[</span><span class="s1">&#39;PrecipBins&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">cut</span><span class="p">(</span><span class="n">merge_df</span><span class="o">.</span><span class="n">PrecipitationSumInches</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;float64&#39;</span><span class="p">),</span> <span class="n">precip_bins</span><span class="p">,</span>
+                                <span class="n">labels</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;0&#39;</span><span class="p">,</span><span class="s1">&#39;0.1-0.5&#39;</span><span class="p">,</span><span class="s1">&#39;0.5-2&#39;</span><span class="p">,</span><span class="s1">&#39;2-10&#39;</span><span class="p">],</span>
+                                <span class="n">include_lowest</span><span class="o">=</span><span class="kc">True</span>
+                                <span class="p">)</span>
+
+<span class="n">merge_df</span><span class="p">[</span><span class="s1">&#39;PrecipBins&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">unique</span><span class="p">()</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+    <div class="prompt output_prompt">Out[14]:</div>
+
+
+
+
+<div class="output_text output_subarea output_execute_result">
+<pre>[0.1-0.5, 0, 0.5-2, 2-10]
+Categories (4, object): [0 &lt; 0.1-0.5 &lt; 0.5-2 &lt; 2-10]</pre>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="Viewing-Rides-by-Day-of-the-week-for-different-Rain-Bins">Viewing Rides by Day of the week for different Rain Bins<a class="anchor-link" href="#Viewing-Rides-by-Day-of-the-week-for-different-Rain-Bins">&#182;</a></h3>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[23]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">rides_by_rain</span> <span class="o">=</span> <span class="n">merge_df</span><span class="o">.</span><span class="n">groupby</span><span class="p">([</span><span class="s1">&#39;PrecipBins&#39;</span><span class="p">,</span> <span class="s1">&#39;Weekday&#39;</span><span class="p">])</span>
+
+<span class="n">day_conv_dict</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="mi">0</span><span class="p">:</span><span class="s1">&#39;Monday&#39;</span><span class="p">,</span>
+    <span class="mi">1</span><span class="p">:</span><span class="s1">&#39;Tuesday&#39;</span><span class="p">,</span>
+    <span class="mi">2</span><span class="p">:</span><span class="s1">&#39;Wednesday&#39;</span><span class="p">,</span>
+    <span class="mi">3</span><span class="p">:</span><span class="s1">&#39;Thursday&#39;</span><span class="p">,</span>
+    <span class="mi">4</span><span class="p">:</span><span class="s1">&#39;Friday&#39;</span><span class="p">,</span>
+    <span class="mi">5</span><span class="p">:</span><span class="s1">&#39;Saturday&#39;</span><span class="p">,</span>
+    <span class="mi">6</span><span class="p">:</span><span class="s1">&#39;Sunday&#39;</span>
+<span class="p">}</span>
+
+<span class="n">weather_rides</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Day,  Rain Bin,  Count&#39;</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">index</span><span class="p">,(</span><span class="n">name</span><span class="p">,</span><span class="n">group</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">rides_by_rain</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;</span><span class="si">{day_conv_dict[index%7]}</span><span class="s2">,   </span><span class="si">{name[0]}</span><span class="s2">,   {group[&#39;Total Rides&#39;].sum()}&quot;</span><span class="p">)</span>
+    <span class="n">weather_rides</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">name</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">group</span><span class="p">[</span><span class="s1">&#39;Total Rides&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()))</span>
+    
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+    <div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>Day,  Rain Bin,  Count
+Monday,   0,   52326
+Tuesday,   0,   49813
+Wednesday,   0,   46905
+Thursday,   0,   48410
+Friday,   0,   68001
+Saturday,   0,   91228
+Sunday,   0,   76639
+Monday,   0.1-0.5,   17656
+Tuesday,   0.1-0.5,   12625
+Wednesday,   0.1-0.5,   17715
+Thursday,   0.1-0.5,   20806
+Friday,   0.1-0.5,   25199
+Saturday,   0.1-0.5,   37051
+Sunday,   0.1-0.5,   27746
+Monday,   0.5-2,   3087
+Tuesday,   0.5-2,   2035
+Wednesday,   0.5-2,   1283
+Thursday,   0.5-2,   1578
+Friday,   0.5-2,   4393
+Saturday,   0.5-2,   7153
+Sunday,   0.5-2,   4741
+Monday,   2-10,   770
+Tuesday,   2-10,   314
+Wednesday,   2-10,   344
+Thursday,   2-10,   838
+Friday,   2-10,   139
+Saturday,   2-10,   94
+Sunday,   2-10,   575
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p><strong>Notes</strong>: Rain has a severe impact on how many bikes are checked out from B cycle.<br>
+Even with a little bit of rain you see a sharp decrease in bike checkouts.<br>
+However, once you go over an 1-2 inches of rain the trend associated with the day of the week goes away.<br>
+Saturday actually becomes the least popular day if it rains over 2 inches.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[24]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">merge_df</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+    <div class="prompt output_prompt">Out[24]:</div>
 
 
 
@@ -13343,1267 +14580,9 @@ div#notebook {
       <td>Sunny</td>
       <td>0.1-0.5</td>
     </tr>
-    <tr>
-      <th>5</th>
-      <td>2013-12-26</td>
-      <td>12</td>
-      <td>2013</td>
-      <td>3</td>
-      <td>54.055</td>
-      <td>91</td>
-      <td>57</td>
-      <td>48</td>
-      <td>39</td>
-      <td>36</td>
-      <td>12</td>
-      <td>3</td>
-      <td>0.000</td>
-      <td>Sunny</td>
-      <td>0</td>
-    </tr>
-    <tr>
-      <th>6</th>
-      <td>2013-12-27</td>
-      <td>12</td>
-      <td>2013</td>
-      <td>4</td>
-      <td>38.622</td>
-      <td>111</td>
-      <td>60</td>
-      <td>53</td>
-      <td>41</td>
-      <td>39</td>
-      <td>7</td>
-      <td>1</td>
-      <td>0.005</td>
-      <td>Sunny</td>
-      <td>0.1-0.5</td>
-    </tr>
-    <tr>
-      <th>7</th>
-      <td>2013-12-28</td>
-      <td>12</td>
-      <td>2013</td>
-      <td>5</td>
-      <td>43.173</td>
-      <td>191</td>
-      <td>62</td>
-      <td>51</td>
-      <td>43</td>
-      <td>39</td>
-      <td>10</td>
-      <td>2</td>
-      <td>0.005</td>
-      <td>Sunny</td>
-      <td>0.1-0.5</td>
-    </tr>
-    <tr>
-      <th>8</th>
-      <td>2013-12-29</td>
-      <td>12</td>
-      <td>2013</td>
-      <td>6</td>
-      <td>41.607</td>
-      <td>252</td>
-      <td>64</td>
-      <td>50</td>
-      <td>49</td>
-      <td>41</td>
-      <td>17</td>
-      <td>5</td>
-      <td>0.000</td>
-      <td>Sunny</td>
-      <td>0</td>
-    </tr>
-    <tr>
-      <th>9</th>
-      <td>2013-12-30</td>
-      <td>12</td>
-      <td>2013</td>
-      <td>0</td>
-      <td>18.366</td>
-      <td>82</td>
-      <td>44</td>
-      <td>40</td>
-      <td>31</td>
-      <td>26</td>
-      <td>13</td>
-      <td>5</td>
-      <td>0.000</td>
-      <td>Sunny</td>
-      <td>0</td>
-    </tr>
-    <tr>
-      <th>10</th>
-      <td>2013-12-31</td>
-      <td>12</td>
-      <td>2013</td>
-      <td>1</td>
-      <td>38.669</td>
-      <td>157</td>
-      <td>55</td>
-      <td>46</td>
-      <td>31</td>
-      <td>28</td>
-      <td>8</td>
-      <td>1</td>
-      <td>0.000</td>
-      <td>Sunny</td>
-      <td>0</td>
-    </tr>
-    <tr>
-      <th>11</th>
-      <td>2014-01-01</td>
-      <td>1</td>
-      <td>2014</td>
-      <td>2</td>
-      <td>43.023</td>
-      <td>258</td>
-      <td>69</td>
-      <td>54</td>
-      <td>51</td>
-      <td>42</td>
-      <td>13</td>
-      <td>4</td>
-      <td>0.000</td>
-      <td>Sunny</td>
-      <td>0</td>
-    </tr>
-    <tr>
-      <th>12</th>
-      <td>2014-01-02</td>
-      <td>1</td>
-      <td>2014</td>
-      <td>3</td>
-      <td>21.227</td>
-      <td>141</td>
-      <td>55</td>
-      <td>44</td>
-      <td>39</td>
-      <td>26</td>
-      <td>21</td>
-      <td>8</td>
-      <td>0.000</td>
-      <td>Sunny</td>
-      <td>0</td>
-    </tr>
-    <tr>
-      <th>13</th>
-      <td>2014-01-03</td>
-      <td>1</td>
-      <td>2014</td>
-      <td>4</td>
-      <td>38.967</td>
-      <td>61</td>
-      <td>58</td>
-      <td>43</td>
-      <td>37</td>
-      <td>22</td>
-      <td>14</td>
-      <td>4</td>
-      <td>0.000</td>
-      <td>Sunny</td>
-      <td>0</td>
-    </tr>
-    <tr>
-      <th>14</th>
-      <td>2014-01-04</td>
-      <td>1</td>
-      <td>2014</td>
-      <td>5</td>
-      <td>39.554</td>
-      <td>168</td>
-      <td>71</td>
-      <td>57</td>
-      <td>55</td>
-      <td>48</td>
-      <td>16</td>
-      <td>7</td>
-      <td>0.000</td>
-      <td>Sunny</td>
-      <td>0</td>
-    </tr>
-    <tr>
-      <th>15</th>
-      <td>2014-01-05</td>
-      <td>1</td>
-      <td>2014</td>
-      <td>6</td>
-      <td>20.024</td>
-      <td>42</td>
-      <td>59</td>
-      <td>47</td>
-      <td>54</td>
-      <td>32</td>
-      <td>21</td>
-      <td>10</td>
-      <td>0.000</td>
-      <td>Sunny</td>
-      <td>0</td>
-    </tr>
-    <tr>
-      <th>16</th>
-      <td>2014-01-06</td>
-      <td>1</td>
-      <td>2014</td>
-      <td>0</td>
-      <td>11.571</td>
-      <td>21</td>
-      <td>36</td>
-      <td>29</td>
-      <td>15</td>
-      <td>8</td>
-      <td>17</td>
-      <td>7</td>
-      <td>0.000</td>
-      <td>Sunny</td>
-      <td>0</td>
-    </tr>
-    <tr>
-      <th>17</th>
-      <td>2014-01-07</td>
-      <td>1</td>
-      <td>2014</td>
-      <td>1</td>
-      <td>18.932</td>
-      <td>44</td>
-      <td>48</td>
-      <td>35</td>
-      <td>29</td>
-      <td>11</td>
-      <td>13</td>
-      <td>5</td>
-      <td>0.000</td>
-      <td>Sunny</td>
-      <td>0</td>
-    </tr>
-    <tr>
-      <th>18</th>
-      <td>2014-01-08</td>
-      <td>1</td>
-      <td>2014</td>
-      <td>2</td>
-      <td>33.792</td>
-      <td>24</td>
-      <td>53</td>
-      <td>47</td>
-      <td>51</td>
-      <td>45</td>
-      <td>12</td>
-      <td>1</td>
-      <td>0.160</td>
-      <td>Rain</td>
-      <td>0.1-0.5</td>
-    </tr>
-    <tr>
-      <th>19</th>
-      <td>2014-01-09</td>
-      <td>1</td>
-      <td>2014</td>
-      <td>3</td>
-      <td>18.119</td>
-      <td>67</td>
-      <td>70</td>
-      <td>62</td>
-      <td>60</td>
-      <td>55</td>
-      <td>12</td>
-      <td>3</td>
-      <td>0.000</td>
-      <td>Fog</td>
-      <td>0</td>
-    </tr>
-    <tr>
-      <th>20</th>
-      <td>2014-01-10</td>
-      <td>1</td>
-      <td>2014</td>
-      <td>4</td>
-      <td>16.069</td>
-      <td>72</td>
-      <td>72</td>
-      <td>65</td>
-      <td>64</td>
-      <td>61</td>
-      <td>13</td>
-      <td>6</td>
-      <td>0.100</td>
-      <td>Rain</td>
-      <td>0.1-0.5</td>
-    </tr>
-    <tr>
-      <th>21</th>
-      <td>2014-01-11</td>
-      <td>1</td>
-      <td>2014</td>
-      <td>5</td>
-      <td>35.682</td>
-      <td>264</td>
-      <td>75</td>
-      <td>62</td>
-      <td>54</td>
-      <td>37</td>
-      <td>12</td>
-      <td>3</td>
-      <td>0.000</td>
-      <td>Sunny</td>
-      <td>0</td>
-    </tr>
-    <tr>
-      <th>22</th>
-      <td>2014-01-12</td>
-      <td>1</td>
-      <td>2014</td>
-      <td>6</td>
-      <td>39.588</td>
-      <td>80</td>
-      <td>67</td>
-      <td>57</td>
-      <td>58</td>
-      <td>47</td>
-      <td>15</td>
-      <td>4</td>
-      <td>0.010</td>
-      <td>Rain</td>
-      <td>0.1-0.5</td>
-    </tr>
-    <tr>
-      <th>23</th>
-      <td>2014-01-13</td>
-      <td>1</td>
-      <td>2014</td>
-      <td>0</td>
-      <td>20.679</td>
-      <td>78</td>
-      <td>71</td>
-      <td>57</td>
-      <td>60</td>
-      <td>36</td>
-      <td>17</td>
-      <td>7</td>
-      <td>0.000</td>
-      <td>Sunny</td>
-      <td>0</td>
-    </tr>
-    <tr>
-      <th>24</th>
-      <td>2014-01-14</td>
-      <td>1</td>
-      <td>2014</td>
-      <td>1</td>
-      <td>31.207</td>
-      <td>111</td>
-      <td>76</td>
-      <td>57</td>
-      <td>31</td>
-      <td>25</td>
-      <td>16</td>
-      <td>5</td>
-      <td>0.000</td>
-      <td>Sunny</td>
-      <td>0</td>
-    </tr>
-    <tr>
-      <th>25</th>
-      <td>2014-01-15</td>
-      <td>1</td>
-      <td>2014</td>
-      <td>2</td>
-      <td>16.880</td>
-      <td>75</td>
-      <td>64</td>
-      <td>52</td>
-      <td>29</td>
-      <td>23</td>
-      <td>14</td>
-      <td>4</td>
-      <td>0.000</td>
-      <td>Sunny</td>
-      <td>0</td>
-    </tr>
-    <tr>
-      <th>26</th>
-      <td>2014-01-16</td>
-      <td>1</td>
-      <td>2014</td>
-      <td>3</td>
-      <td>20.895</td>
-      <td>95</td>
-      <td>72</td>
-      <td>56</td>
-      <td>31</td>
-      <td>27</td>
-      <td>14</td>
-      <td>4</td>
-      <td>0.000</td>
-      <td>Sunny</td>
-      <td>0</td>
-    </tr>
-    <tr>
-      <th>27</th>
-      <td>2014-01-17</td>
-      <td>1</td>
-      <td>2014</td>
-      <td>4</td>
-      <td>20.000</td>
-      <td>105</td>
-      <td>64</td>
-      <td>54</td>
-      <td>31</td>
-      <td>20</td>
-      <td>14</td>
-      <td>5</td>
-      <td>0.000</td>
-      <td>Sunny</td>
-      <td>0</td>
-    </tr>
-    <tr>
-      <th>28</th>
-      <td>2014-01-18</td>
-      <td>1</td>
-      <td>2014</td>
-      <td>5</td>
-      <td>42.911</td>
-      <td>247</td>
-      <td>70</td>
-      <td>54</td>
-      <td>41</td>
-      <td>33</td>
-      <td>12</td>
-      <td>2</td>
-      <td>0.000</td>
-      <td>Sunny</td>
-      <td>0</td>
-    </tr>
-    <tr>
-      <th>29</th>
-      <td>2014-01-19</td>
-      <td>1</td>
-      <td>2014</td>
-      <td>6</td>
-      <td>36.540</td>
-      <td>211</td>
-      <td>72</td>
-      <td>59</td>
-      <td>41</td>
-      <td>30</td>
-      <td>9</td>
-      <td>3</td>
-      <td>0.000</td>
-      <td>Sunny</td>
-      <td>0</td>
-    </tr>
-    <tr>
-      <th>...</th>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-    </tr>
-    <tr>
-      <th>70</th>
-      <td>2014-03-01</td>
-      <td>3</td>
-      <td>2014</td>
-      <td>5</td>
-      <td>45.830</td>
-      <td>524</td>
-      <td>82</td>
-      <td>68</td>
-      <td>65</td>
-      <td>57</td>
-      <td>16</td>
-      <td>5</td>
-      <td>0.000</td>
-      <td>Fog</td>
-      <td>0</td>
-    </tr>
-    <tr>
-      <th>71</th>
-      <td>2014-03-02</td>
-      <td>3</td>
-      <td>2014</td>
-      <td>6</td>
-      <td>17.590</td>
-      <td>78</td>
-      <td>73</td>
-      <td>51</td>
-      <td>67</td>
-      <td>45</td>
-      <td>20</td>
-      <td>10</td>
-      <td>0.080</td>
-      <td>Rain</td>
-      <td>0.1-0.5</td>
-    </tr>
-    <tr>
-      <th>72</th>
-      <td>2014-03-03</td>
-      <td>3</td>
-      <td>2014</td>
-      <td>0</td>
-      <td>25.577</td>
-      <td>104</td>
-      <td>47</td>
-      <td>36</td>
-      <td>27</td>
-      <td>20</td>
-      <td>18</td>
-      <td>10</td>
-      <td>0.080</td>
-      <td>Rain , Thunderstorm</td>
-      <td>0.1-0.5</td>
-    </tr>
-    <tr>
-      <th>73</th>
-      <td>2014-03-04</td>
-      <td>3</td>
-      <td>2014</td>
-      <td>1</td>
-      <td>15.117</td>
-      <td>94</td>
-      <td>50</td>
-      <td>40</td>
-      <td>36</td>
-      <td>31</td>
-      <td>9</td>
-      <td>4</td>
-      <td>0.170</td>
-      <td>Rain</td>
-      <td>0.1-0.5</td>
-    </tr>
-    <tr>
-      <th>74</th>
-      <td>2014-03-05</td>
-      <td>3</td>
-      <td>2014</td>
-      <td>2</td>
-      <td>19.971</td>
-      <td>174</td>
-      <td>53</td>
-      <td>46</td>
-      <td>43</td>
-      <td>39</td>
-      <td>13</td>
-      <td>3</td>
-      <td>0.000</td>
-      <td>Sunny</td>
-      <td>0</td>
-    </tr>
-    <tr>
-      <th>75</th>
-      <td>2014-03-06</td>
-      <td>3</td>
-      <td>2014</td>
-      <td>3</td>
-      <td>26.896</td>
-      <td>347</td>
-      <td>65</td>
-      <td>54</td>
-      <td>42</td>
-      <td>38</td>
-      <td>13</td>
-      <td>4</td>
-      <td>0.000</td>
-      <td>Sunny</td>
-      <td>0</td>
-    </tr>
-    <tr>
-      <th>76</th>
-      <td>2014-03-07</td>
-      <td>3</td>
-      <td>2014</td>
-      <td>4</td>
-      <td>28.551</td>
-      <td>1007</td>
-      <td>67</td>
-      <td>53</td>
-      <td>50</td>
-      <td>42</td>
-      <td>16</td>
-      <td>6</td>
-      <td>0.000</td>
-      <td>Sunny</td>
-      <td>0</td>
-    </tr>
-    <tr>
-      <th>77</th>
-      <td>2014-03-08</td>
-      <td>3</td>
-      <td>2014</td>
-      <td>5</td>
-      <td>29.037</td>
-      <td>519</td>
-      <td>59</td>
-      <td>52</td>
-      <td>57</td>
-      <td>49</td>
-      <td>14</td>
-      <td>4</td>
-      <td>0.740</td>
-      <td>Rain , Thunderstorm</td>
-      <td>0.5-2</td>
-    </tr>
-    <tr>
-      <th>78</th>
-      <td>2014-03-09</td>
-      <td>3</td>
-      <td>2014</td>
-      <td>6</td>
-      <td>25.411</td>
-      <td>1281</td>
-      <td>58</td>
-      <td>49</td>
-      <td>45</td>
-      <td>39</td>
-      <td>15</td>
-      <td>5</td>
-      <td>0.110</td>
-      <td>Rain</td>
-      <td>0.1-0.5</td>
-    </tr>
-    <tr>
-      <th>79</th>
-      <td>2014-03-10</td>
-      <td>3</td>
-      <td>2014</td>
-      <td>0</td>
-      <td>27.084</td>
-      <td>1639</td>
-      <td>71</td>
-      <td>61</td>
-      <td>56</td>
-      <td>51</td>
-      <td>12</td>
-      <td>3</td>
-      <td>0.010</td>
-      <td>Rain</td>
-      <td>0.1-0.5</td>
-    </tr>
-    <tr>
-      <th>80</th>
-      <td>2014-03-11</td>
-      <td>3</td>
-      <td>2014</td>
-      <td>1</td>
-      <td>29.783</td>
-      <td>1970</td>
-      <td>83</td>
-      <td>70</td>
-      <td>56</td>
-      <td>54</td>
-      <td>14</td>
-      <td>5</td>
-      <td>0.000</td>
-      <td>Sunny</td>
-      <td>0</td>
-    </tr>
-    <tr>
-      <th>81</th>
-      <td>2014-03-12</td>
-      <td>3</td>
-      <td>2014</td>
-      <td>2</td>
-      <td>25.000</td>
-      <td>1820</td>
-      <td>70</td>
-      <td>60</td>
-      <td>50</td>
-      <td>28</td>
-      <td>24</td>
-      <td>11</td>
-      <td>0.000</td>
-      <td>Sunny</td>
-      <td>0</td>
-    </tr>
-    <tr>
-      <th>82</th>
-      <td>2014-03-13</td>
-      <td>3</td>
-      <td>2014</td>
-      <td>3</td>
-      <td>37.024</td>
-      <td>2017</td>
-      <td>68</td>
-      <td>52</td>
-      <td>40</td>
-      <td>26</td>
-      <td>9</td>
-      <td>4</td>
-      <td>0.000</td>
-      <td>Sunny</td>
-      <td>0</td>
-    </tr>
-    <tr>
-      <th>83</th>
-      <td>2014-03-14</td>
-      <td>3</td>
-      <td>2014</td>
-      <td>4</td>
-      <td>37.012</td>
-      <td>2642</td>
-      <td>75</td>
-      <td>62</td>
-      <td>59</td>
-      <td>51</td>
-      <td>13</td>
-      <td>5</td>
-      <td>0.000</td>
-      <td>Sunny</td>
-      <td>0</td>
-    </tr>
-    <tr>
-      <th>84</th>
-      <td>2014-03-15</td>
-      <td>3</td>
-      <td>2014</td>
-      <td>5</td>
-      <td>40.202</td>
-      <td>2463</td>
-      <td>74</td>
-      <td>68</td>
-      <td>64</td>
-      <td>62</td>
-      <td>12</td>
-      <td>4</td>
-      <td>0.070</td>
-      <td>Fog , Rain</td>
-      <td>0.1-0.5</td>
-    </tr>
-    <tr>
-      <th>85</th>
-      <td>2014-03-16</td>
-      <td>3</td>
-      <td>2014</td>
-      <td>6</td>
-      <td>39.041</td>
-      <td>966</td>
-      <td>64</td>
-      <td>56</td>
-      <td>58</td>
-      <td>45</td>
-      <td>24</td>
-      <td>11</td>
-      <td>0.000</td>
-      <td>Sunny</td>
-      <td>0</td>
-    </tr>
-    <tr>
-      <th>86</th>
-      <td>2014-03-17</td>
-      <td>3</td>
-      <td>2014</td>
-      <td>0</td>
-      <td>21.839</td>
-      <td>347</td>
-      <td>68</td>
-      <td>55</td>
-      <td>31</td>
-      <td>26</td>
-      <td>16</td>
-      <td>6</td>
-      <td>0.000</td>
-      <td>Sunny</td>
-      <td>0</td>
-    </tr>
-    <tr>
-      <th>87</th>
-      <td>2014-03-18</td>
-      <td>3</td>
-      <td>2014</td>
-      <td>1</td>
-      <td>35.352</td>
-      <td>332</td>
-      <td>83</td>
-      <td>65</td>
-      <td>56</td>
-      <td>42</td>
-      <td>18</td>
-      <td>8</td>
-      <td>0.000</td>
-      <td>Sunny</td>
-      <td>0</td>
-    </tr>
-    <tr>
-      <th>88</th>
-      <td>2014-03-19</td>
-      <td>3</td>
-      <td>2014</td>
-      <td>2</td>
-      <td>25.035</td>
-      <td>254</td>
-      <td>72</td>
-      <td>62</td>
-      <td>55</td>
-      <td>37</td>
-      <td>15</td>
-      <td>6</td>
-      <td>0.000</td>
-      <td>Sunny</td>
-      <td>0</td>
-    </tr>
-    <tr>
-      <th>89</th>
-      <td>2014-03-20</td>
-      <td>3</td>
-      <td>2014</td>
-      <td>3</td>
-      <td>29.577</td>
-      <td>414</td>
-      <td>76</td>
-      <td>59</td>
-      <td>40</td>
-      <td>36</td>
-      <td>10</td>
-      <td>2</td>
-      <td>0.000</td>
-      <td>Sunny</td>
-      <td>0</td>
-    </tr>
-    <tr>
-      <th>90</th>
-      <td>2014-03-21</td>
-      <td>3</td>
-      <td>2014</td>
-      <td>4</td>
-      <td>38.117</td>
-      <td>630</td>
-      <td>80</td>
-      <td>67</td>
-      <td>60</td>
-      <td>54</td>
-      <td>17</td>
-      <td>7</td>
-      <td>0.000</td>
-      <td>Fog</td>
-      <td>0</td>
-    </tr>
-    <tr>
-      <th>91</th>
-      <td>2014-03-22</td>
-      <td>3</td>
-      <td>2014</td>
-      <td>5</td>
-      <td>33.250</td>
-      <td>836</td>
-      <td>77</td>
-      <td>69</td>
-      <td>65</td>
-      <td>62</td>
-      <td>12</td>
-      <td>4</td>
-      <td>0.000</td>
-      <td>Sunny</td>
-      <td>0</td>
-    </tr>
-    <tr>
-      <th>92</th>
-      <td>2014-03-23</td>
-      <td>3</td>
-      <td>2014</td>
-      <td>6</td>
-      <td>34.310</td>
-      <td>365</td>
-      <td>61</td>
-      <td>54</td>
-      <td>51</td>
-      <td>43</td>
-      <td>17</td>
-      <td>9</td>
-      <td>0.000</td>
-      <td>Sunny</td>
-      <td>0</td>
-    </tr>
-    <tr>
-      <th>93</th>
-      <td>2014-03-24</td>
-      <td>3</td>
-      <td>2014</td>
-      <td>0</td>
-      <td>36.844</td>
-      <td>321</td>
-      <td>66</td>
-      <td>58</td>
-      <td>47</td>
-      <td>42</td>
-      <td>10</td>
-      <td>3</td>
-      <td>0.000</td>
-      <td>Sunny</td>
-      <td>0</td>
-    </tr>
-    <tr>
-      <th>94</th>
-      <td>2014-03-25</td>
-      <td>3</td>
-      <td>2014</td>
-      <td>1</td>
-      <td>26.997</td>
-      <td>323</td>
-      <td>69</td>
-      <td>57</td>
-      <td>46</td>
-      <td>38</td>
-      <td>15</td>
-      <td>5</td>
-      <td>0.000</td>
-      <td>Sunny</td>
-      <td>0</td>
-    </tr>
-    <tr>
-      <th>95</th>
-      <td>2014-03-26</td>
-      <td>3</td>
-      <td>2014</td>
-      <td>2</td>
-      <td>16.940</td>
-      <td>200</td>
-      <td>66</td>
-      <td>60</td>
-      <td>55</td>
-      <td>47</td>
-      <td>22</td>
-      <td>10</td>
-      <td>0.005</td>
-      <td>Rain</td>
-      <td>0.1-0.5</td>
-    </tr>
-    <tr>
-      <th>96</th>
-      <td>2014-03-27</td>
-      <td>3</td>
-      <td>2014</td>
-      <td>3</td>
-      <td>20.422</td>
-      <td>258</td>
-      <td>82</td>
-      <td>72</td>
-      <td>68</td>
-      <td>63</td>
-      <td>16</td>
-      <td>8</td>
-      <td>0.010</td>
-      <td>Rain</td>
-      <td>0.1-0.5</td>
-    </tr>
-    <tr>
-      <th>97</th>
-      <td>2014-03-28</td>
-      <td>3</td>
-      <td>2014</td>
-      <td>4</td>
-      <td>35.639</td>
-      <td>510</td>
-      <td>89</td>
-      <td>76</td>
-      <td>67</td>
-      <td>61</td>
-      <td>18</td>
-      <td>5</td>
-      <td>0.000</td>
-      <td>Thunderstorm</td>
-      <td>0</td>
-    </tr>
-    <tr>
-      <th>98</th>
-      <td>2014-03-29</td>
-      <td>3</td>
-      <td>2014</td>
-      <td>5</td>
-      <td>40.969</td>
-      <td>964</td>
-      <td>77</td>
-      <td>64</td>
-      <td>48</td>
-      <td>40</td>
-      <td>13</td>
-      <td>5</td>
-      <td>0.000</td>
-      <td>Sunny</td>
-      <td>0</td>
-    </tr>
-    <tr>
-      <th>99</th>
-      <td>2014-03-30</td>
-      <td>3</td>
-      <td>2014</td>
-      <td>6</td>
-      <td>35.731</td>
-      <td>747</td>
-      <td>79</td>
-      <td>62</td>
-      <td>51</td>
-      <td>43</td>
-      <td>20</td>
-      <td>8</td>
-      <td>0.000</td>
-      <td>Sunny</td>
-      <td>0</td>
-    </tr>
   </tbody>
 </table>
-<p>100 rows × 15 columns</p>
 </div>
-</div>
-
-</div>
-
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[4]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="n">status</span><span class="p">,</span> <span class="n">dataset</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">upload_dataset</span><span class="p">(</span><span class="s1">&#39;./data/&#39;</span><span class="o">+</span><span class="n">DATASET_NAME</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">status</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">dataset</span><span class="p">)</span>
-
-<span class="k">if</span> <span class="ow">not</span> <span class="n">status</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">dataset</span><span class="p">)</span>
-</pre></div>
-
-    </div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area">
-
-    <div class="prompt"></div>
-
-
-<div class="output_subarea output_stream output_stdout output_text">
-<pre>True
-{&#39;dataset_name&#39;: &#39;final_cycle_weather_by_day.csv&#39;}
-</pre>
-</div>
-</div>
-
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<h2 id="Data-cleaning">Data cleaning<a class="anchor-link" href="#Data-cleaning">&#182;</a></h2><p>Using Darwin to clean data.</p>
-
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[11]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># We set the target column to Total Rides,</span>
-<span class="c1"># which we are aiming to predict</span>
-<span class="n">target</span> <span class="o">=</span> <span class="s1">&#39;Total Rides&#39;</span>
-<span class="n">status</span><span class="p">,</span> <span class="n">job_id</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">clean_data</span><span class="p">(</span><span class="n">dataset_name</span><span class="o">=</span><span class="n">DATASET_NAME</span><span class="p">,</span> 
-                               <span class="n">target</span><span class="o">=</span> <span class="n">target</span><span class="p">)</span>
-<span class="k">if</span> <span class="ow">not</span> <span class="n">status</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">job_id</span><span class="p">)</span>
-<span class="k">else</span><span class="p">:</span>
-    <span class="n">ds</span><span class="o">.</span><span class="n">wait_for_job</span><span class="p">(</span><span class="n">job_id</span><span class="p">[</span><span class="s1">&#39;job_name&#39;</span><span class="p">])</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">Data has been successfully cleaned!&#39;</span><span class="p">)</span>
-</pre></div>
-
-    </div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area">
-
-    <div class="prompt"></div>
-
-
-<div class="output_subarea output_stream output_stdout output_text">
-<pre>{&#39;status&#39;: &#39;Requested&#39;, &#39;starttime&#39;: &#39;2019-04-22T20:53:53.29391&#39;, &#39;endtime&#39;: None, &#39;percent_complete&#39;: 0, &#39;job_type&#39;: &#39;CleanDataTiny&#39;, &#39;loss&#39;: None, &#39;generations&#39;: None, &#39;dataset_names&#39;: [&#39;final_cycle_weather_by_day.csv&#39;], &#39;artifact_names&#39;: [&#39;d139d445aae44b74a6c35254e622fafa&#39;], &#39;model_name&#39;: None, &#39;job_error&#39;: None}
-{&#39;status&#39;: &#39;Complete&#39;, &#39;starttime&#39;: &#39;2019-04-22T20:53:53.29391&#39;, &#39;endtime&#39;: &#39;2019-04-22T20:53:55.961211&#39;, &#39;percent_complete&#39;: 100, &#39;job_type&#39;: &#39;CleanDataTiny&#39;, &#39;loss&#39;: None, &#39;generations&#39;: None, &#39;dataset_names&#39;: [&#39;final_cycle_weather_by_day.csv&#39;], &#39;artifact_names&#39;: [&#39;d139d445aae44b74a6c35254e622fafa&#39;], &#39;model_name&#39;: None, &#39;job_error&#39;: &#39;&#39;}
-
-Data has been successfully cleaned!
-</pre>
-</div>
-</div>
-
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<h2 id="Model-creation-and-training">Model creation and training<a class="anchor-link" href="#Model-creation-and-training">&#182;</a></h2>
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<p>We use Darwin to build a model that will learn the class labels in the target column. We train for 2 minutes, as we found that training for longer resulted in decreased accuracy.</p>
-
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[12]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="n">model</span> <span class="o">=</span> <span class="n">target</span> <span class="o">+</span> <span class="s2">&quot;_model0&quot;</span> <span class="o">+</span> <span class="n">ts</span>
-<span class="n">status</span><span class="p">,</span> <span class="n">job_id</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">create_model</span><span class="p">(</span><span class="n">dataset_names</span> <span class="o">=</span> <span class="n">DATASET_NAME</span><span class="p">,</span> \
-                                 <span class="n">model_name</span> <span class="o">=</span>  <span class="n">model</span><span class="p">,</span> \
-                                 <span class="n">max_train_time</span> <span class="o">=</span> <span class="s1">&#39;00:02&#39;</span><span class="p">)</span>
-<span class="k">if</span> <span class="n">status</span><span class="p">:</span>
-    <span class="n">ds</span><span class="o">.</span><span class="n">wait_for_job</span><span class="p">(</span><span class="n">job_id</span><span class="p">[</span><span class="s1">&#39;job_name&#39;</span><span class="p">])</span>
-<span class="k">else</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">job_id</span><span class="p">)</span>
-</pre></div>
-
-    </div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area">
-
-    <div class="prompt"></div>
-
-
-<div class="output_subarea output_stream output_stdout output_text">
-<pre>{&#39;status&#39;: &#39;Requested&#39;, &#39;starttime&#39;: &#39;2019-04-22T20:54:09.616693&#39;, &#39;endtime&#39;: None, &#39;percent_complete&#39;: 0, &#39;job_type&#39;: &#39;TrainModel&#39;, &#39;loss&#39;: None, &#39;generations&#39;: 0, &#39;dataset_names&#39;: [&#39;final_cycle_weather_by_day.csv&#39;], &#39;artifact_names&#39;: None, &#39;model_name&#39;: &#39;Total Rides_model020190422204946&#39;, &#39;job_error&#39;: None}
-{&#39;status&#39;: &#39;Running&#39;, &#39;starttime&#39;: &#39;2019-04-22T20:54:09.616693&#39;, &#39;endtime&#39;: None, &#39;percent_complete&#39;: 2, &#39;job_type&#39;: &#39;TrainModel&#39;, &#39;loss&#39;: 0.4407574534416199, &#39;generations&#39;: 3, &#39;dataset_names&#39;: [&#39;final_cycle_weather_by_day.csv&#39;], &#39;artifact_names&#39;: None, &#39;model_name&#39;: &#39;Total Rides_model020190422204946&#39;, &#39;job_error&#39;: &#39;&#39;}
-{&#39;status&#39;: &#39;Running&#39;, &#39;starttime&#39;: &#39;2019-04-22T20:54:09.616693&#39;, &#39;endtime&#39;: None, &#39;percent_complete&#39;: 2, &#39;job_type&#39;: &#39;TrainModel&#39;, &#39;loss&#39;: 0.4407574534416199, &#39;generations&#39;: 3, &#39;dataset_names&#39;: [&#39;final_cycle_weather_by_day.csv&#39;], &#39;artifact_names&#39;: None, &#39;model_name&#39;: &#39;Total Rides_model020190422204946&#39;, &#39;job_error&#39;: &#39;&#39;}
-{&#39;status&#39;: &#39;Running&#39;, &#39;starttime&#39;: &#39;2019-04-22T20:54:09.616693&#39;, &#39;endtime&#39;: None, &#39;percent_complete&#39;: 2, &#39;job_type&#39;: &#39;TrainModel&#39;, &#39;loss&#39;: 0.4407574534416199, &#39;generations&#39;: 3, &#39;dataset_names&#39;: [&#39;final_cycle_weather_by_day.csv&#39;], &#39;artifact_names&#39;: None, &#39;model_name&#39;: &#39;Total Rides_model020190422204946&#39;, &#39;job_error&#39;: &#39;&#39;}
-{&#39;status&#39;: &#39;Running&#39;, &#39;starttime&#39;: &#39;2019-04-22T20:54:09.616693&#39;, &#39;endtime&#39;: None, &#39;percent_complete&#39;: 2, &#39;job_type&#39;: &#39;TrainModel&#39;, &#39;loss&#39;: 0.4407574534416199, &#39;generations&#39;: 3, &#39;dataset_names&#39;: [&#39;final_cycle_weather_by_day.csv&#39;], &#39;artifact_names&#39;: None, &#39;model_name&#39;: &#39;Total Rides_model020190422204946&#39;, &#39;job_error&#39;: &#39;&#39;}
-{&#39;status&#39;: &#39;Running&#39;, &#39;starttime&#39;: &#39;2019-04-22T20:54:09.616693&#39;, &#39;endtime&#39;: None, &#39;percent_complete&#39;: 2, &#39;job_type&#39;: &#39;TrainModel&#39;, &#39;loss&#39;: 0.4407574534416199, &#39;generations&#39;: 3, &#39;dataset_names&#39;: [&#39;final_cycle_weather_by_day.csv&#39;], &#39;artifact_names&#39;: None, &#39;model_name&#39;: &#39;Total Rides_model020190422204946&#39;, &#39;job_error&#39;: &#39;&#39;}
-{&#39;status&#39;: &#39;Running&#39;, &#39;starttime&#39;: &#39;2019-04-22T20:54:09.616693&#39;, &#39;endtime&#39;: None, &#39;percent_complete&#39;: 33, &#39;job_type&#39;: &#39;TrainModel&#39;, &#39;loss&#39;: 0.35911521315574646, &#39;generations&#39;: 3, &#39;dataset_names&#39;: [&#39;final_cycle_weather_by_day.csv&#39;], &#39;artifact_names&#39;: None, &#39;model_name&#39;: &#39;Total Rides_model020190422204946&#39;, &#39;job_error&#39;: &#39;&#39;}
-{&#39;status&#39;: &#39;Running&#39;, &#39;starttime&#39;: &#39;2019-04-22T20:54:09.616693&#39;, &#39;endtime&#39;: None, &#39;percent_complete&#39;: 33, &#39;job_type&#39;: &#39;TrainModel&#39;, &#39;loss&#39;: 0.35911521315574646, &#39;generations&#39;: 3, &#39;dataset_names&#39;: [&#39;final_cycle_weather_by_day.csv&#39;], &#39;artifact_names&#39;: None, &#39;model_name&#39;: &#39;Total Rides_model020190422204946&#39;, &#39;job_error&#39;: &#39;&#39;}
-{&#39;status&#39;: &#39;Running&#39;, &#39;starttime&#39;: &#39;2019-04-22T20:54:09.616693&#39;, &#39;endtime&#39;: None, &#39;percent_complete&#39;: 33, &#39;job_type&#39;: &#39;TrainModel&#39;, &#39;loss&#39;: 0.35911521315574646, &#39;generations&#39;: 3, &#39;dataset_names&#39;: [&#39;final_cycle_weather_by_day.csv&#39;], &#39;artifact_names&#39;: None, &#39;model_name&#39;: &#39;Total Rides_model020190422204946&#39;, &#39;job_error&#39;: &#39;&#39;}
-{&#39;status&#39;: &#39;Complete&#39;, &#39;starttime&#39;: &#39;2019-04-22T20:54:09.616693&#39;, &#39;endtime&#39;: &#39;2019-04-22T20:56:19.081583&#39;, &#39;percent_complete&#39;: 100, &#39;job_type&#39;: &#39;TrainModel&#39;, &#39;loss&#39;: 0.35911521315574646, &#39;generations&#39;: 3, &#39;dataset_names&#39;: [&#39;final_cycle_weather_by_day.csv&#39;], &#39;artifact_names&#39;: None, &#39;model_name&#39;: &#39;Total Rides_model020190422204946&#39;, &#39;job_error&#39;: &#39;&#39;}
-</pre>
-</div>
-</div>
-
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<h2 id="Model-analysis">Model analysis<a class="anchor-link" href="#Model-analysis">&#182;</a></h2><p>We use Darwin to analyze the model, and report which features have a larger impact on the model.</p>
-
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[13]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># Retrieve feature importance of built model</span>
-<span class="n">status</span><span class="p">,</span> <span class="n">artifact</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">analyze_model</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
-<span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-<span class="k">if</span> <span class="n">status</span><span class="p">:</span>
-    <span class="n">ds</span><span class="o">.</span><span class="n">wait_for_job</span><span class="p">(</span><span class="n">artifact</span><span class="p">[</span><span class="s1">&#39;job_name&#39;</span><span class="p">])</span>
-<span class="k">else</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">artifact</span><span class="p">)</span>
-<span class="n">status</span><span class="p">,</span> <span class="n">feature_importance</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">download_artifact</span><span class="p">(</span><span class="n">artifact</span><span class="p">[</span><span class="s1">&#39;artifact_name&#39;</span><span class="p">])</span>
-</pre></div>
-
-    </div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area">
-
-    <div class="prompt"></div>
-
-
-<div class="output_subarea output_stream output_stdout output_text">
-<pre>{&#39;status&#39;: &#39;Requested&#39;, &#39;starttime&#39;: &#39;2019-04-22T20:56:26.447193&#39;, &#39;endtime&#39;: None, &#39;percent_complete&#39;: 0, &#39;job_type&#39;: &#39;AnalyzeModel&#39;, &#39;loss&#39;: 0.35911521315574646, &#39;generations&#39;: 3, &#39;dataset_names&#39;: None, &#39;artifact_names&#39;: [&#39;8361e0ada5c24d9f9d89c46d7fbf8a29&#39;], &#39;model_name&#39;: &#39;Total Rides_model020190422204946&#39;, &#39;job_error&#39;: None}
-{&#39;status&#39;: &#39;Requested&#39;, &#39;starttime&#39;: &#39;2019-04-22T20:56:26.447193&#39;, &#39;endtime&#39;: None, &#39;percent_complete&#39;: 0, &#39;job_type&#39;: &#39;AnalyzeModel&#39;, &#39;loss&#39;: 0.35911521315574646, &#39;generations&#39;: 3, &#39;dataset_names&#39;: None, &#39;artifact_names&#39;: [&#39;8361e0ada5c24d9f9d89c46d7fbf8a29&#39;], &#39;model_name&#39;: &#39;Total Rides_model020190422204946&#39;, &#39;job_error&#39;: None}
-{&#39;status&#39;: &#39;Complete&#39;, &#39;starttime&#39;: &#39;2019-04-22T20:56:26.447193&#39;, &#39;endtime&#39;: &#39;2019-04-22T20:56:50.830635&#39;, &#39;percent_complete&#39;: 100, &#39;job_type&#39;: &#39;AnalyzeModel&#39;, &#39;loss&#39;: 0.35911521315574646, &#39;generations&#39;: 3, &#39;dataset_names&#39;: None, &#39;artifact_names&#39;: [&#39;8361e0ada5c24d9f9d89c46d7fbf8a29&#39;], &#39;model_name&#39;: &#39;Total Rides_model020190422204946&#39;, &#39;job_error&#39;: &#39;&#39;}
-</pre>
-</div>
-</div>
-
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<p>These are the ten most important features of the model.</p>
-
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[14]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="n">feature_importance</span><span class="p">[:</span><span class="mi">10</span><span class="p">]</span>
-</pre></div>
-
-    </div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area">
-
-    <div class="prompt output_prompt">Out[14]:</div>
-
-
-
-
-<div class="output_text output_subarea output_execute_result">
-<pre>Avg Trip Duration    0.204534
-Month = 3            0.133748
-Weekday = 5          0.080535
-TempHighF            0.076483
-TempAvgF             0.066083
-Month = 10           0.062911
-WindHighMPH          0.059412
-DewPointHighF        0.043241
-DewPointAvgF         0.042360
-Weekday = 6          0.034651
-dtype: float64</pre>
 </div>
 
 </div>
@@ -14615,184 +14594,16 @@ dtype: float64</pre>
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>We will later see that this model has a pretty accurate predictive power. <br> What is interesting to note is the features that are the most important. Namely, whether it is March and whether it is October (the months of SXSW and ACL, respectively) contribute a lot to the total number of rides. The other features are not too surprising: the high and average temperature (which may discourage riders), whether it is Saturday or Sunday (Weekday = 5, 6), the wind speed, the dewpoint (which is related to comfort), and the precipitation (all of which may discourage riders). Furthermore, note that the average trip duration column---which tells the average trip duration for a day---does not show up in these most important features. This is a good thing, as one can estimate the other features from the morning forecast, but it is harder to know the average trip duration for a day before that day occurs. This also shows that these two factors are not heavily related.</p>
-
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<h2 id="Predictions">Predictions<a class="anchor-link" href="#Predictions">&#182;</a></h2><p>In creating the model, Darwin previously withheld a portion of the dataset for testing. We use our model to predict the target column label (in this case, total rides per day) on the testing set. We then download the predictions from Darwin's server.</p>
-
+<h2 id="Creating-CSV-for-Darwin">Creating CSV for Darwin<a class="anchor-link" href="#Creating-CSV-for-Darwin">&#182;</a></h2>
 </div>
 </div>
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[15]:</div>
+<div class="prompt input_prompt">In&nbsp;[25]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="n">status</span><span class="p">,</span> <span class="n">artifact</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">run_model</span><span class="p">(</span><span class="n">DATASET_NAME</span><span class="p">,</span> <span class="n">model</span><span class="p">)</span>
-<span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-<span class="n">ds</span><span class="o">.</span><span class="n">wait_for_job</span><span class="p">(</span><span class="n">artifact</span><span class="p">[</span><span class="s1">&#39;job_name&#39;</span><span class="p">])</span>
-</pre></div>
-
-    </div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area">
-
-    <div class="prompt"></div>
-
-
-<div class="output_subarea output_stream output_stdout output_text">
-<pre>{&#39;status&#39;: &#39;Requested&#39;, &#39;starttime&#39;: &#39;2019-04-22T20:56:59.073515&#39;, &#39;endtime&#39;: None, &#39;percent_complete&#39;: 0, &#39;job_type&#39;: &#39;RunModel&#39;, &#39;loss&#39;: 0.35911521315574646, &#39;generations&#39;: 3, &#39;dataset_names&#39;: [&#39;final_cycle_weather_by_day.csv&#39;], &#39;artifact_names&#39;: [&#39;ade2522628cb4a02b39b1e61fdcff96a&#39;], &#39;model_name&#39;: &#39;Total Rides_model020190422204946&#39;, &#39;job_error&#39;: None}
-{&#39;status&#39;: &#39;Complete&#39;, &#39;starttime&#39;: &#39;2019-04-22T20:56:59.073515&#39;, &#39;endtime&#39;: &#39;2019-04-22T20:57:09.1822&#39;, &#39;percent_complete&#39;: 100, &#39;job_type&#39;: &#39;RunModel&#39;, &#39;loss&#39;: 0.35911521315574646, &#39;generations&#39;: 3, &#39;dataset_names&#39;: [&#39;final_cycle_weather_by_day.csv&#39;], &#39;artifact_names&#39;: [&#39;ade2522628cb4a02b39b1e61fdcff96a&#39;], &#39;model_name&#39;: &#39;Total Rides_model020190422204946&#39;, &#39;job_error&#39;: &#39;&#39;}
-</pre>
-</div>
-</div>
-
-<div class="output_area">
-
-    <div class="prompt output_prompt">Out[15]:</div>
-
-
-
-
-<div class="output_text output_subarea output_execute_result">
-<pre>(True, &#39;Job completed&#39;)</pre>
-</div>
-
-</div>
-
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[16]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># We download the predictions from Darwin&#39;s server.</span>
-<span class="n">status</span><span class="p">,</span> <span class="n">prediction</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">download_artifact</span><span class="p">(</span><span class="n">artifact</span><span class="p">[</span><span class="s1">&#39;artifact_name&#39;</span><span class="p">])</span>
-</pre></div>
-
-    </div>
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<h2 id="Model-accuracy">Model accuracy<a class="anchor-link" href="#Model-accuracy">&#182;</a></h2><p>We create a plot to compare the predicted label with the actual label. We also get the $R^2$ score. The $x$-axis is the actual total number of rides that day, and the $y$-axis the predicted label.</p>
-
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[17]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="c1">#Plot predictions vs actual</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="n">target</span><span class="p">],</span> <span class="n">prediction</span><span class="p">[</span><span class="n">target</span><span class="p">],</span> <span class="s1">&#39;.&#39;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">200</span><span class="p">],[</span><span class="mi">0</span><span class="p">,</span><span class="mi">200</span><span class="p">],</span><span class="s1">&#39;--k&#39;</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;R^2 : &#39;</span><span class="p">,</span> <span class="n">r2_score</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="n">target</span><span class="p">],</span> <span class="n">prediction</span><span class="p">[</span><span class="n">target</span><span class="p">]))</span>
-</pre></div>
-
-    </div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area">
-
-    <div class="prompt"></div>
-
-
-<div class="output_subarea output_stream output_stdout output_text">
-<pre>R^2 :  0.7656139023149349
-</pre>
-</div>
-</div>
-
-<div class="output_area">
-
-    <div class="prompt"></div>
-
-
-
-
-<div class="output_png output_subarea ">
-<img src="data:image/png;base64,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
-"
->
-</div>
-
-</div>
-
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<p>From above, we see that we have an $R^2$ score of 0.77, which is quite high. Hence, this model is quite good at predicting the total number of rides in a day. As we discuss in our report, this model could be leveraged by BCycle to predict how many bikes to have on the street for a given day, and when would be a good day to do maintenance work on bicycles or bicycle stations. <br>
-The cell below shows us the type of model we used, and the parameters. Notably, Darwin used a temporal convolutional neural net.</p>
-
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[18]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="n">status</span><span class="p">,</span> <span class="n">model_type</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">lookup_model_name</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">model_type</span><span class="p">[</span><span class="s1">&#39;description&#39;</span><span class="p">][</span><span class="s1">&#39;best_genome&#39;</span><span class="p">])</span>
-</pre></div>
-
-    </div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area">
-
-    <div class="prompt"></div>
-
-
-<div class="output_subarea output_stream output_stdout output_text">
-<pre>[{&#39;layer 1&#39;: {&#39;type&#39;: &#39;TemporalConvolutionalNet&#39;, &#39;parameters&#39;: {&#39;numfilters&#39;: 8, &#39;kernelsize&#39;: 9, &#39;depth&#39;: 6, &#39;numunits&#39;: 49, &#39;seqlength&#39;: 67, &#39;dropout&#39;: 0.0}}}, {&#39;layer 2&#39;: {&#39;type&#39;: &#39;TemporalConvolutionalNet&#39;, &#39;parameters&#39;: {&#39;numfilters&#39;: 8, &#39;kernelsize&#39;: 7, &#39;depth&#39;: 7, &#39;numunits&#39;: 59, &#39;seqlength&#39;: 184, &#39;dropout&#39;: 0.0}}}, {&#39;layer 3&#39;: {&#39;type&#39;: &#39;LinearGene&#39;, &#39;parameters&#39;: {&#39;activation&#39;: &#39;relu&#39;, &#39;numunits&#39;: 1}}}]
-</pre>
-</div>
-</div>
-
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="n">ds</span><span class="o">.</span><span class="n">delete_model</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">merge_df</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="s1">&#39;./data/final_cycle_weather_by_day.csv&#39;</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 </pre></div>
 
     </div>
