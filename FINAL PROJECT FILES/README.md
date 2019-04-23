@@ -35,10 +35,15 @@ __austin_weather.csv__ - This is the original weather dataset we obtained off th
 
 __cleaned_final_b_cycle_data.csv__ - B-Cycle data that has been cleaned and processed from all the exploration conducted in the Cleaned_Data_Exploration notebook. This dataset was used to engineer features in the cleaned_feature_engr notebook. __NOTE: This dataset must be uncompressed before using with notebook.__ 
 
-__cleaned_austin_weather.csv__ - weather data that has been cleaned and processed from all the exploration conducted in the Cleaned_Data_Exploration notebook. This dataset was used to engineer features in the cleaned_feature_engr notebook. 
+__cleaned_austin_weather.csv__ - Weather data that has been cleaned and processed from all the exploration conducted in the Cleaned_Data_Exploration notebook. This dataset was used to engineer features in the cleaned_feature_engr notebook. 
 
 
 __final_cycle_weather_by_day.csv__ - The final version of the cycle and weather data that has been cleaned and engineered for darwin.
 
-__cycle_weather_by_day_with_avgs_trimmed.csv__ -  cycle and weather data that has been trimed to exclude rows where the 'Avg Trip Duration' is longer than 60 minutes. This is generated and utilized in Predicting trip length.ipynb.
+__cycle_weather_by_day_with_avgs_trimmed.csv__ -  Cycle and weather data that has been trimed to exclude rows where the 'Avg Trip Duration' is longer than 60 minutes. This is generated and utilized in Predicting trip length.ipynb.
 
+__Austin_B_Cycle_Trips.zip__ - This is a zipped version of the csv used in Membership Breakdown.ipynb to oberserve B-Cycle's performance annually and over time. 
+
+__austin_weather.csv__ - This is the weather dataset used and feature engineered in Member Ride Duration with Weather.ipynb. 
+
+__bike_use.csv__ - This is a modified .csv used in Member Ride Duration with Weather.ipynb (code is also found in the notebook). 
