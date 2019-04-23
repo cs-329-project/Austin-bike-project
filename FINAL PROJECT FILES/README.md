@@ -4,6 +4,8 @@ Project Report.pdf - The final project report, which was also turned in on Canva
 
 ## Data files in the data folder
 
+Austin_B-Cycle_Trips.zip - This .csv is the raw B-Cycle dataset, and it is used in Membership Breakdown.ipynb to provide a detailed look into B-Cycle's annual performance. 
+
 bike_use.csv - Used in Membership Ride Duration with Weather.ipynb to load in specific B-Cycle data with the Checkout Date column reformatted into a DateTime type. 
 
 austin_weather.csv - Used in Membership Ride Duration with Weather.ipynb to load in Austin weather data that is then feature engineered in the notebook. 
