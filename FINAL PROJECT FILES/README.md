@@ -46,4 +46,4 @@ __Predicting trip length.ipynb /.html__ - Darwin model built to predict the aver
 
 ### A failed attempt at clustering
 
-__Member Ride Duration with Weather.ipynb__ - Failed attempt at associating member type and weather (rain, temp, humidity) to cluster usage and predict how users ride  
+__Member Ride Duration with Weather.ipynb__ - Failed attempt at associating member type and weather (rain, temp, humidity) to cluster usage and predict how users ride.
