@@ -31,7 +31,7 @@ __bike_use.csv__ - This is a modified .csv used in Member Ride Duration with Wea
 
 ### Data exploration
 
-__Cleaned_Data_Exploration.ipynb__ - Data exploration / visualization. Shows usage per day of the week, usage by month, distribution of ride duration, distribution of checkout time. Also shows bad kiosks (and removes these from the dataset). 
+__Cleaned_Data_Exploration.ipynb__ - Data exploration / visualization. Shows usage per day of the week, usage by month, distribution of ride duration, distribution of checkout time. Also shows bad kiosks (and removes these from the dataset). Creates a .csv file which is used in the feature engineering notebook.
 
 __Membership Breakdown.ipynb__ - Data exploration / visualization. Take in the raw B-Cycle data and then observe the member type breakdown and average ride duration over time. We see that the makeup of membership type changes over the years.
 
