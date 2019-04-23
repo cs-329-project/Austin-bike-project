@@ -4,6 +4,10 @@ Project Report.pdf - The final project report, which was also turned in on Canva
 
 ## Data files in the data folder
 
+bike_use.csv - Used in Membership Ride Duration with Weather.ipynb to load in specific B-Cycle data with the Checkout Date column reformatted into a DateTime type. 
+
+austin_weather.csv - Used in Membership Ride Duration with Weather.ipynb to load in Austin weather data that is then feature engineered in the notebook. 
+
 ## Data exploration
 
 Cleaned_Data_Exploration.ipynb - Data exploration / visualization. Shows usage per day of the week, usage by month, distribution of ride duration, distribution of checkout time. Also shows bad kiosks (and removes these from the dataset). 
